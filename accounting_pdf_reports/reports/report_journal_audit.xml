@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_journal">
+        <t t-call="web.html_container">
+            <t t-set="data_report_margin_top" t-value="12"/>
+            <t t-set="data_report_header_spacing" t-value="9"/>
+            <t t-set="data_report_dpi" t-value="110"/>
+            <t t-foreach="docs" t-as="o">
+                <t t-set="folio_cont" t-value="folio_res[o.id]"/>
+                <t t-call="web.internal_layout">
+                    <div class="page">
+                        <h2><t t-esc="o.name"/> Journal</h2>
+
+                        <div class="row mt32">
+                            <div class="col-3">
+                                <strong>Company:</strong>
+                                <p t-esc="res_company.name"/>
+                            </div>
+                            <div class="col-3">
+                                <strong>Journal:</strong>
+                                <p t-esc="o.name"/>
+                            </div>
+                            <div class="col-3">
+                                <strong>Entries Sorted By:</strong>
+                                <p t-if="data['form'].get('sort_selection') != 'l.date'">Journal Entry Number</p>
+                                <p t-if="data['form'].get('sort_selection') == 'l.date'">Date</p>
+                            </div>
+                            <div class="col-3">
+                                <strong>Target Moves:</strong>
+                                <p t-if="data['form']['target_move'] == 'all'">All Entries</p>
+                                <p t-if="data['form']['target_move'] == 'posted'">All Posted Entries</p>
+                            </div>
+                        </div>
+                        
+                        <t t-foreach="range(0,len(lines[o.id]))" t-as="x">
+                            <h5>FOLIO DE CORRELATIVO: <span t-esc="folio_cont"/></h5>
+                            <table class="table table-sm table-reports" style="page-break-after:always">
+                                <thead>
+                                    <tr>
+                                        <th>Move</th>
+                                        <th>Date</th>
+                                        <th>Account</th>
+                                        <th>Partner</th>
+                                        <th>Label</th>
+                                        <th>Debit</th>
+                                        <th>Credit</th>
+                                        <th t-if="data['form']['amount_currency']">Currency</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="lines[o.id][x]" t-as="line">
+                                        <tr>
+                                            <td><span t-esc="line.move_id.name != '/' and line.move_id.name or ('*'+str(line.move_id.id))"/></td>
+                                            <td><span t-field="line.date"/></td>
+                                            <td><span t-field="line.account_id.code"/></td>
+                                            <td><span t-esc="line.sudo().partner_id and line.sudo().partner_id.name and line.sudo().partner_id.name[:23] or ''"/></td>
+                                            <td><span t-esc="line.name and line.name[:35]"/></td>
+                                            <td><span t-esc="line.debit" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                            <td><span t-esc="line.credit" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                            <td t-if="data['form']['amount_currency'] and line.amount_currency">
+                                                <span t-esc="line.amount_currency" t-options="{'widget': 'monetary', 'display_currency': line.currency_id}"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                            <t t-set="folio_cont" t-value="folio_cont + 1"/>
+                        </t>
+                        
+                        <h5>FOLIO DE CORRELATIVO: <span t-esc="folio_cont"/></h5>
+                        <div class="row">
+                            <div class="col-4 pull-right">
+                                <table>
+                                    <tr>
+                                        <td><strong>Total</strong></td>
+                                        <td><span t-esc="sum_debit(data, o)" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                        <td><span t-esc="sum_credit(data, o)" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-4">
+                                <table class="table table-sm table-reports">
+                                    <thead>
+                                        <tr><th colspan="3">Tax Declaration</th></tr>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Base Amount</th>
+                                            <th>Tax Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-set="taxes" t-value="get_taxes(data, o)"/>
+                                        <tr t-foreach="taxes" t-as="tax">
+                                            <td><span t-esc="tax.name"/></td>
+                                            <td><span t-esc="taxes[tax]['base_amount']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                            <td><span t-esc="taxes[tax]['tax_amount']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

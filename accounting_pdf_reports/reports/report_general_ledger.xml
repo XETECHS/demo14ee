@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_general_ledger">
+        <t t-call="web.html_container">
+            <t t-set="data_report_margin_top" t-value="12"/>
+            <t t-set="data_report_header_spacing" t-value="9"/>
+            <t t-set="data_report_dpi" t-value="110"/>
+            
+            <t t-call="web.internal_layout">
+                <t t-if="not company">
+                    <!-- Multicompany -->
+                    <t t-if="company_id">
+                        <t t-set="company" t-value="company_id"/>
+                    </t>
+                    <t t-elif="o and 'company_id' in o">
+                        <t t-set="company" t-value="o.company_id.sudo()"/>
+                    </t>
+                    <t t-else="else">
+                        <t t-set="company" t-value="res_company"/>
+                    </t>
+                </t>
+                <div class="header">
+                    
+                    <div class="row">
+                        <div class="col-3">
+                            <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                        </div>
+                        <div class="col-2 offset-2 text-center">
+                            <span t-esc="company.name"/>
+                        </div>
+                        <div class="col-2 offset-3 text-right">
+                            <ul class="list-inline">
+                                <li class="list-inline-item"><span class="page"/></li>
+                                <li class="list-inline-item">/</li>
+                                <li class="list-inline-item"><span class="topage"/></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="page">
+                   
+                    <h2><span t-esc="res_company.name"/>: General ledger</h2>
+
+                    <div class="row mt32">
+                        <div class="col-4">
+                            <strong>Journals:</strong>
+                              <p t-esc="', '.join([ lt or '' for lt in print_journal ])"/>
+                        </div>
+                        <div class="col-4">
+                            <strong>Display Account</strong>
+                            <p>
+                                <span t-if="data['display_account'] == 'all'">All accounts'</span>
+                                <span t-if="data['display_account'] == 'movement'">With movements</span>
+                                <span t-if="data['display_account'] == 'not_zero'">With balance not equal to zero</span>
+                            </p>
+                        </div>
+                        <div class="col-4">
+                            <strong>Target Moves:</strong>
+                            <p t-if="data['target_move'] == 'all'">All Entries</p>
+                            <p t-if="data['target_move'] == 'posted'">All Posted Entries</p>
+                        </div>
+                    </div>
+                    <div class="row mb32">
+                        <div class="col-4">
+                            <strong>Sorted By:</strong>
+                            <p t-if="data['sortby'] == 'sort_date'">Date</p>
+                            <p t-if="data['sortby'] == 'sort_journal_partner'">Journal and Partner</p>
+                        </div>
+                        <div class="col-4">
+                            <t t-if="data['date_from']"><strong>Date from :</strong> <span t-esc="data['date_from']"/><br/></t>
+                            <t t-if="data['date_to']"><strong>Date to :</strong> <span t-esc="data['date_to']"/></t>
+                        </div>
+                    </div>
+                    <t t-set="folio_cont" t-value="folio"/>
+                    <t t-set="line_cont" t-value="0"/>
+                    <t t-foreach="Accounts" t-as="account">
+                        <t t-foreach="range(1,len(account['clean_move_lines']))" t-as="x">
+                                <h5>FOLIO DE CORRELATIVO: <span t-esc="folio_cont"/></h5>
+                                <table class="table table-sm table-reports" style="page-break-after:always">
+                                    <thead>
+                                        <tr class="text-center">
+                                            <th class="folio_th">Date</th>
+                                            <th>JRNL</th>
+                                            <th>Partner</th>
+                                            <th>Ref</th>
+                                            <th>Move</th>
+                                            <th>Entry Label</th>
+                                            <th>Debit</th>
+                                            <th>Credit</th>
+                                            <th>Balance</th>
+                                            <th groups="base.group_multi_currency">Currency</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="account['clean_move_lines'][x]" t-as="line">
+                                        <tr>
+                                            <td><span t-esc="line['ldate']"/></td>
+                                            <td><span t-esc="line['lcode']"/></td>
+                                            <td><span t-esc="line['partner_name']"/></td>
+                                            <td><span t-if="line['lref']" t-esc="line['lref']"/></td>
+                                            <td><span t-esc="line['move_name']"/></td>
+                                            <td><span t-esc="line['lname']"/></td>
+                                            <td class="text-right">
+                                                <span t-esc="line['debit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                                            </td>
+                                            <td class="text-right">
+                                                <span t-esc="line['credit']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                                            </td>
+                                            <td class="text-right">
+                                                <span t-esc="line['balance']" t-options="{'widget': 'monetary', 'display_currency': res_company.currency_id}"/>
+                                            </td>
+                                            <td class="text-right" groups="base.group_multi_currency">
+                                                <span t-esc="line['amount_currency'] if line['amount_currency'] and line['amount_currency'] > 0.00 else ''"/>
+                                                <span t-esc="line['currency_code'] if line['amount_currency'] and line['amount_currency'] > 0.00 else ''"/>
+                                            </td>
+                                        </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                                <t t-set="folio_cont" t-value="folio_cont + 1"/>
+                        </t>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
